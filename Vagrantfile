@@ -35,6 +35,7 @@ Vagrant.configure("2") do |config|
     v.vmx["ethernet0.opromsize"] = "262144"
     v.vmx["ethernet0.virtualDev"] = "e1000e"
     v.vmx["e1000ebios.filename"] = File.dirname(__FILE__)+"/808610d3.mrom"
+    v.vmx["tools.synctime"] = "TRUE"
     v.gui = true
   end
 
