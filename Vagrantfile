@@ -24,32 +24,29 @@ Vagrant.configure("2") do |config|
   #   printf '52:54:00:%02X:%02X:%02X\n' $(echo $1| cut -d'.' --output-delimiter=' ' -f2,3,4)
   # }
 
+  config.vm.synced_folder '.', '/vagrant', disabled: true
 
-
-  config.vm.provider :libvirt do |libvirt|
-    libvirt.cpus = 4
-    libvirt.memory = 4096
-    libvirt.nested = true
-    libvirt.graphics_type = 'spice'
-    libvirt.video_type = 'virtio'
+  config.vm.provider :vmware_fusion do |v|
+    v.vmx["numvcpus"] = "4"
+    v.vmx["virtualHW.version"] = "19"
+    v.vmx["ethernet0.present"] = "TRUE"
+    v.vmx["ethernet0.vnet"] = "vmnet7"
+    v.vmx["ethernet0.connectiontype"] = "custom"
+    v.vmx["ethernet0.opromsize"] = "262144"
+    v.vmx["ethernet0.virtualDev"] = "e1000e"
+    v.vmx["e1000ebios.filename"] = File.dirname(__FILE__)+"/808610d3.mrom"
+    v.gui = true
   end
-
-  config.vm.synced_folder ".",
-    "/vagrant",
-    type: "nfs",
-    nfs_udp: false,
-    disabled: true
 
 
   config.vm.define :lb, autostart: false do |node|
     node.vm.box = "centos/7"
     node.vm.network :private_network,
-      :libvirt__network_name => 'okd-internal',
-      :libvirt__dhcp_enabled => false,
       :ip => "192.168.100.2"
-    node.vm.provider :libvirt do |libvirt|
-      libvirt.cpus = 2
-      libvirt.memory = 2048
+    node.vm.provider :vmware_fusion do |v|
+      v.vmx["displayname"] = "okd-lb"
+      v.vmx["memsize"] = "2048"
+      v.vmx["numvcpus"] = "2"
     end
     node.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/lb.yml"
@@ -58,16 +55,16 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define :bootstrap, autostart: false do |node|
-    node.vm.network :private_network,
-      :libvirt__network_name => 'okd-internal',
-      :libvirt__dhcp_enabled => false,
-      :mac => "52:54:00:A8:64:05"  # 192.168.100.5
-    node.vm.provider :libvirt do |libvirt|
-      libvirt.memory = 8192
-      libvirt.boot 'hd'
-      libvirt.boot 'network'
-      libvirt.storage :file, :size => '20G', :type => 'qcow2'
-      libvirt.mgmt_attach = false
+    node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
+    # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
+    node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
+    node.ssh.username = "core"
+    node.vm.provider :vmware_fusion do |v|
+      v.vmx["displayname"] = "okd-bootstrap"
+      v.vmx["memsize"] = "8192"
+      v.vmx["ethernet0.addressType"] = "static"
+      v.vmx["ethernet0.address"] = "52:54:00:A8:64:05"  # 192.168.100.5
+      v.vmx["bios.bootOrder"] = "ethernet0"
     end
   end
 
@@ -79,31 +76,32 @@ Vagrant.configure("2") do |config|
 
   (0..2).each do |node_num|
     config.vm.define "cp#{node_num}", autostart: false do |node|
-      node.vm.network :private_network,
-        :libvirt__network_name => 'okd-internal',
-        :libvirt__dhcp_enabled => false,
-        :mac => mac[node_num]
-      node.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 8192
-        libvirt.boot 'hd'
-        libvirt.boot 'network'
-        libvirt.storage :file, :size => '40G', :type => 'qcow2'
-        libvirt.mgmt_attach = false
+      node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
+      # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
+      node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
+      node.ssh.username = "core"
+      node.vm.provider :vmware_fusion do |v|
+        v.vmx["displayname"] = "okd-cp#{node_num}"
+        v.vmx["memsize"] = "8192"
+        v.vmx["ethernet0.addressType"] = "static"
+        v.vmx["ethernet0.address"] = mac[node_num]  # 192.168.100.5
+        v.vmx["bios.bootOrder"] = "ethernet0"
+        # v.vmx["ethernet1.present"] = "TRUE"
+        # v.vmx["ethernet1.connectiontype"] = "nat"
       end
     end
   end
 
   (0..2).each do |node_num|
     config.vm.define "worker#{node_num}", autostart: false do |node|
-      node.vm.network :private_network,
-        :libvirt__network_name => 'okd-internal',
-        :libvirt__dhcp_enabled => false
-      node.vm.provider :libvirt do |libvirt|
-        libvirt.memory = 8192
-        libvirt.boot 'hd'
-        libvirt.boot 'network'
-        libvirt.storage :file, :size => '40G', :type => 'qcow2'
-        libvirt.mgmt_attach = false
+      node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
+      # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
+      node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
+      node.ssh.username = "core"
+      node.vm.provider :vmware_fusion do |v|
+        v.vmx["displayname"] = "okd-worker#{node_num}"
+        v.vmx["memsize"] = "8192"
+        v.vmx["bios.bootOrder"] = "ethernet0"
       end
     end
   end

@@ -5,9 +5,8 @@ chain --autofree boot.ipxe.cfg ||
 
 :coreos-stable
 echo Booting OKD Bootstrap 
-kernel ${okd-kernel-url}
-initrd ${okd-initrd-url}
-imgargs ${okd-kernel} ip=dhcp rd.neednet=1 initrd=${okd-initrd-url}  console=tty0 console=ttyS0 coreos.inst=yes coreos.inst.install_dev=vda coreos.inst.image_url=${okd-image-url} coreos.inst.ignition_url=${base-url}/${ignition-path}/bootstrap.ign
+kernel ${okd-kernel-url} initrd=main console=tty0 console=ttyS0 ignition.platform.id=metal ignition.firstboot coreos.live.rootfs_url=${okd-image-url} coreos.inst.install_dev=/dev/sda coreos.inst.ignition_url=${base-url}/${ignition-path}/bootstrap.ign
+initrd --name main ${okd-initrd-url} 
 boot
 
 

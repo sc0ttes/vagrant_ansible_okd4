@@ -15,7 +15,7 @@
     dest: /etc/dnsmasq.d/openshift.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify:
     - restart_dnsmasq
 
@@ -26,12 +26,35 @@
     state: started
     enabled: "yes"
 
+- name: Create Iptables NAT chain
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: "eth0"
+    jump: MASQUERADE
+    comment: Ansible NAT Masquerade
+
+- name: Create Iptables NAT chain
+  iptables:
+    chain: FORWARD
+    in_interface: "eth1"
+    jump: ACCEPT
+    comment: Ansible NAT Masquerade
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+    reload: True
+
 - name:
   nmcli:
     conn_name: "System eth0"
-    dns4: 127.0.0.1
+    dns4_ignore_auto: true
+    dns4: 192.168.100.2, 8.8.8.8
     type: ethernet
     state: present
-  when: '"127.0.0.1" not in ansible_dns.nameservers'
+  when: '"192.168.100.2" not in ansible_dns.nameservers'
   notify:
     - restart_NetworkManager
