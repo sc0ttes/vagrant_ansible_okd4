@@ -47,6 +47,11 @@ Vagrant.configure("2") do |config|
       v.vmx["displayname"] = "okd-lb"
       v.vmx["memsize"] = "2048"
       v.vmx["numvcpus"] = "2"
+      v.vmx["ethernet0.present"] = "TRUE"
+      v.vmx["ethernet0.connectiontype"] = "nat"
+      v.vmx["ethernet1.present"] = "TRUE"
+      v.vmx["ethernet1.vnet"] = "vmnet7"
+      v.vmx["ethernet1.connectiontype"] = "custom"
     end
     node.vm.provision "ansible" do |ansible|
       ansible.playbook = "ansible/lb.yml"
@@ -86,8 +91,6 @@ Vagrant.configure("2") do |config|
         v.vmx["ethernet0.addressType"] = "static"
         v.vmx["ethernet0.address"] = mac[node_num]  # 192.168.100.5
         v.vmx["bios.bootOrder"] = "ethernet0"
-        # v.vmx["ethernet1.present"] = "TRUE"
-        # v.vmx["ethernet1.connectiontype"] = "nat"
       end
     end
   end
