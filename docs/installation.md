@@ -227,6 +227,8 @@ You can access the *lb* system via vagrant:
 Username:password is test:test or test1:test1
 -->
 
+*** NOTE *** If you are planning to setup persistent volumes via NFS (likely), it is suggested that you add a second hard drive to this machine with 100GB+ so that it can be served to OKD via NFS.
+
 
 ## Creating iPXE drivers for VMWare Fusion
 
