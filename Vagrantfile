@@ -38,6 +38,7 @@ Vagrant.configure("2") do |config|
     v.vmx["ethernet0.virtualDev"] = "e1000e"
     v.vmx["e1000ebios.filename"] = File.dirname(__FILE__)+"/808610d3.mrom"
     v.vmx["tools.synctime"] = "TRUE"
+    v.vmx["snapshot.disabled"] = "TRUE"
   end
 
 
@@ -62,7 +63,7 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define :bootstrap, autostart: false do |node|
-    node.vm.disk :disk, size: "100GB", primary: true
+    node.vm.disk :disk, size: "100GB"
     node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
     # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
     node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
@@ -84,7 +85,7 @@ Vagrant.configure("2") do |config|
 
   (0..2).each do |node_num|
     config.vm.define "cp#{node_num}", autostart: false do |node|
-      node.vm.disk :disk, size: "100GB", primary: true
+      node.vm.disk :disk, size: "100GB"
       node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
       # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
       node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
