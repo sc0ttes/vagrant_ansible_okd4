@@ -41,6 +41,11 @@
     jump: ACCEPT
     comment: Ansible NAT Masquerade
 
+- name: Save current state of the firewall in system file
+  community.general.iptables_state:
+    state: saved
+    path: /etc/sysconfig/iptables
+
 - name: Enable IPv4 forwarding
   sysctl:
     name: net.ipv4.ip_forward
