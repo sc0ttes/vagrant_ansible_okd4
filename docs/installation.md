@@ -38,11 +38,15 @@ This walkthrough is based on my working environment.
 Hardware:
 16 core processor, 64GB RAM, 1TB SSD
 
+*** IMPORTANT *** Set your OSX time to GMT/UTC by going into the Settings -> General -> Date & Time -> Unset "Set time zone automatically" and put in a GMT timezone city in "Closest city" ( "Reykjavik - Iceland" should work)
+
+*** IMPORTANT *** The machine requirements (https://docs.openshift.com/container-platform/4.12/installing/installing_bare_metal/installing-bare-metal.html#installation-minimum-resource-requirements_installing-bare-metal) must be adhered to or your master/cp nodes will not boot up correctly. You may be able to skimp on storage space but not CPU/RAM.
+
 You will also need some way of accessing the dns inside the cluster. This will manually add mappings to your hosts file.
 
-    sudo sh -c 'echo "192.168.100.2 api.kube1.vm.test console-openshift-console.apps.kube1.vm.test" >> /etc/hosts'
+    sudo sh -c 'echo "192.168.100.2 api.kube1.vm.test console-openshift-console.apps.kube1.vm.test oauth-openshift.apps.kube1.vm.test" >> /etc/hosts'
 
-# Get the code.
+# Get the code
 
 Step one is to clone the code which is available on Github.
 
@@ -53,7 +57,7 @@ The working directory for for all the commands is assumed to be the root
 directory of the cloned git repository.
 
 
-## Getting the cli tools and preparing.
+## Getting the CLI tools and preparing
 
 
 Make some directories to use.
@@ -75,11 +79,12 @@ Download the installation file and command line tool `oc` on a local computer.
 
 - https://github.com/okd-project/okd/releases
 
-
-    cd tmp/
-    curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-install-mac-${OKD_RELEASE}.tar.gz
-    curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-client-mac-${OKD_RELEASE}.tar.gz
-    cd ..
+```
+cd tmp/
+curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-install-mac-${OKD_RELEASE}.tar.gz
+curl -LO https://github.com/okd-project/okd/releases/download/${OKD_RELEASE}/openshift-client-mac-${OKD_RELEASE}.tar.gz
+cd ..
+```
 
 Extract the installation program and put it somewhere on your PATH.
 
@@ -99,7 +104,7 @@ If you have used the directory before then you need to remove the old files.
     rm -rf webroot/os_ignition/.openshift*
 
 
-## Creating the boot configs.
+## Creating the boot configs
 
 Create an `install-config.yaml` inside the installation directory and customize
 it as per the documentation on
@@ -154,7 +159,7 @@ Creating the Kubernetes manifest and Ignition config files:
 
     sed -i.bak 's/  mastersSchedulable: true/  mastersSchedulable: false/g' webroot/os_ignition/manifests/cluster-scheduler-02-config.yml
 
-    openshift-install create ignition-configs --dir=webroot/os_ignition
+    openshift-install create ignition-configs --dir=webroot/os_ignition --log-level=debug
 
 
 Besides the ignition files this also create the kubernetes
@@ -192,7 +197,7 @@ Run the following commands to configure vmnet7 (or choose an alternative vmnet t
     sudo /Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --stop
     sudo /Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --start
 
-## The load-balancer system.
+## The load-balancer system
 
 
 Start the first vagrant system that will provide the load-balancer and DHCP/DNS
@@ -277,7 +282,7 @@ both the `kubernetes_api` and `machine_config` backends. They should go green.
 When it has finished installing you can ssh to the system using the ssh key
 created earlier.
 
-    ssh -i ssh_key/id_ed25519 core@192.168.100.5
+    ssh -o StrictHostKeyChecking=no -i ssh_key/id_ed25519 core@192.168.100.5
 
     # to view the progress logs
     journalctl -b -f -u bootkube.service
@@ -296,6 +301,9 @@ each.
 
     vagrant up /worker[0-9]/ --provider vmware_fusion
 
+To run this a bit quicker in parallel, you could run these in multiple terminals/tabs or run them in the background like so:
+
+    vagrant up cp0 --provider vmware_fusion &
 
 You need to remove the *bootstrap* system when it has finished doing the initial
 setup of the *cp* systems. The following command will monitor the
@@ -331,7 +339,7 @@ Destroy the *bootstrap* system
 Looking in the HAProxy page http://192.168.100.2:8404/stats you will see that
 the *cp* systems have all gone green and the *bootstrap* system is now red
 
-## Access the cluster with `co`
+## Access the cluster with `oc`
 
     export KUBECONFIG=webroot/os_ignition/auth/kubeconfig
 
@@ -401,7 +409,7 @@ Watch the cluster operators start up.
 
     watch -n5 oc get clusteroperators
 
-Eventually, everything go to *True* in the **AVAILABLE** column.
+Eventually, everything will go to *True* in the **AVAILABLE** column.
 
     NAME                                       VERSION   AVAILABLE   PROGRESSING   DEGRADED   SINCE
     authentication                             4.4.6     True        False         False      30m
