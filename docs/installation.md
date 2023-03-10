@@ -244,6 +244,7 @@ Username:password is test:test or test1:test1
 1. Create the partition for /dev/sdb and format it: https://www.digitalocean.com/community/tutorials/create-a-partition-in-linux
 1. Mount the drive to a folder
 1. Enable the NFS server for the folder: https://dev.to/prajwalmithun/setup-nfs-server-client-in-linux-and-unix-27id
+1. Verify your NFS mount: https://www.cyberciti.biz/faq/howto-see-shares-on-nfs-server-exported-filesystems/
 
 ## Creating iPXE drivers for VMWare Fusion
 
