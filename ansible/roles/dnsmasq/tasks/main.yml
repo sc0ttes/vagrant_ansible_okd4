@@ -1,5 +1,5 @@
 ---
-- name: Install dnsmasq
+- name: Install dnsmasq and iptables
   yum:
     name: "{{ packages }}"
     state: present
@@ -8,6 +8,7 @@
     packages:
       - dnsmasq
       - NetworkManager-glib
+      - iptables-services
 
 - name: Copy in dnsmasq config
   copy:
@@ -22,6 +23,13 @@
 - name: Start service dnsmasq, if not started
   service:
     name: dnsmasq
+    daemon_reload: "yes"
+    state: started
+    enabled: "yes"
+
+- name: Start service iptables, if not started
+  service:
+    name: iptables
     daemon_reload: "yes"
     state: started
     enabled: "yes"

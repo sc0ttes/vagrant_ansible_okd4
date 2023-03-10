@@ -29,7 +29,8 @@ Vagrant.configure("2") do |config|
   config.vm.provider :vmware_fusion do |v|
     v.linked_clone = false
     v.gui = true
-    v.vmx["numvcpus"] = "4"
+    v.vmx["numvcpus"] = "8"
+    v.vmx["memsize"] = "24576"
     v.vmx["virtualHW.version"] = "19"
     v.vmx["ethernet0.present"] = "TRUE"
     v.vmx["ethernet0.vnet"] = "vmnet7"
@@ -63,14 +64,12 @@ Vagrant.configure("2") do |config|
 
 
   config.vm.define :bootstrap, autostart: false do |node|
-    node.vm.disk :disk, size: "100GB"
     node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
     # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
     node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
     node.ssh.username = "core"
     node.vm.provider :vmware_fusion do |v|
       v.vmx["displayname"] = "okd-bootstrap"
-      v.vmx["memsize"] = "16384"
       v.vmx["ethernet0.addressType"] = "static"
       v.vmx["ethernet0.address"] = "52:54:00:A8:64:05"  # 192.168.100.5
       v.vmx["bios.bootOrder"] = "ethernet0"
@@ -85,14 +84,12 @@ Vagrant.configure("2") do |config|
 
   (0..2).each do |node_num|
     config.vm.define "cp#{node_num}", autostart: false do |node|
-      node.vm.disk :disk, size: "100GB"
       node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
       # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
       node.ssh.private_key_path = File.dirname(__FILE__)+"/ssh_key/id_ed25519"
       node.ssh.username = "core"
       node.vm.provider :vmware_fusion do |v|
         v.vmx["displayname"] = "okd-cp#{node_num}"
-        v.vmx["memsize"] = "16384"
         v.vmx["ethernet0.addressType"] = "static"
         v.vmx["ethernet0.address"] = mac[node_num]  # 192.168.100.5
         v.vmx["bios.bootOrder"] = "ethernet0"
@@ -100,7 +97,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  (0..2).each do |node_num|
+  (0..1).each do |node_num|
     config.vm.define "worker#{node_num}", autostart: false do |node|
       node.vm.box = "centos/7"    # This is solely because Vagrant <-> VMWare Fusion requires a box be set even though iPXE takes over
       # Note that the (automatically created) hard drive for this box needs to be SATA/SCSI -- not NVME
@@ -108,7 +105,6 @@ Vagrant.configure("2") do |config|
       node.ssh.username = "core"
       node.vm.provider :vmware_fusion do |v|
         v.vmx["displayname"] = "okd-worker#{node_num}"
-        v.vmx["memsize"] = "8192"
         v.vmx["bios.bootOrder"] = "ethernet0"
       end
     end
