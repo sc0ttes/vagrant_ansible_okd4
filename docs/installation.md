@@ -1,4 +1,4 @@
-# Vagrant > Ansible > OKD4.12
+# Mac OSX > Vagrant > Ansible > OKD4.12
 
 OKD4 is the upstream community version of Red Hat's OpenShift Container
 Platform. This system, which is based on Kubernetes and containers, enables you
@@ -13,7 +13,7 @@ should end up with a UPI install OKD4 cluster with:
 
 - One router/load-balancer/dhcp/dns system
 - Three control-plane systems
-- Three worker systems
+- Two worker systems
 
 If you run into any issues with these install instructions, it is highly recommended that you check the official OKD docs as these may quickly become out of date with newer versions as previous instructions have done.
 
@@ -40,9 +40,9 @@ Hardware:
 
 *** IMPORTANT *** Set your OSX time to GMT/UTC by going into the Settings -> General -> Date & Time -> Unset "Set time zone automatically" and put in a GMT timezone city in "Closest city" ( "Reykjavik - Iceland" should work)
 
-*** IMPORTANT *** The machine requirements (https://docs.openshift.com/container-platform/4.12/installing/installing_bare_metal/installing-bare-metal.html#installation-minimum-resource-requirements_installing-bare-metal) must be adhered to or your master/cp nodes will not boot up correctly. You may be able to skimp on storage space but not CPU/RAM.
+*** IMPORTANT *** The machine requirements (https://docs.openshift.com/container-platform/4.12/installing/installing_bare_metal/installing-bare-metal.html#installation-minimum-resource-requirements_installing-bare-metal) must be adhered to or your master/cp nodes will not boot up correctly. You may be able to skimp on storage space but not CPU/RAM. Every VM in the Vagrantfile has been overprovisioned beyond minimums simply to speed up deployment. After the machine has booted up, the resource consumption falls to expected levels.
 
-You will also need some way of accessing the dns inside the cluster. This will manually add mappings to your hosts file.
+You will also need some way of accessing the dns inside the cluster. This will manually add mappings to your hosts file. Alternatively, setting up dnsmasq on your OSX box as @timhughes post suggested and following the instructions here https://passingcuriosity.com/2013/dnsmasq-dev-osx/ will likely work better than the below command if you plan on doing anything more than just simply OKD setup.
 
     sudo sh -c 'echo "192.168.100.2 api.kube1.vm.test console-openshift-console.apps.kube1.vm.test oauth-openshift.apps.kube1.vm.test" >> /etc/hosts'
 
@@ -197,6 +197,15 @@ Run the following commands to configure vmnet7 (or choose an alternative vmnet t
     sudo /Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --stop
     sudo /Applications/VMware\ Fusion.app/Contents/Library/vmnet-cli --start
 
+## Some helpful commands you may use regularly and troubleshooting tips
+
+* Wipe all vagrant boxes: `vagrant destroy -f /cp[0-9]/ /worker[0-9]/ bootstrap lb`
+* `sudo` may fix your issue
+* `journalctl` just to see if anything is happening on the machine in question
+* `ss -ant` to see what network connections are currently established
+* `oc get clusteroperator/network` check OKD network status
+* `oc describe node cp0` check cp0/node's status
+
 ## The load-balancer system
 
 
@@ -227,12 +236,18 @@ You can access the *lb* system via vagrant:
 Username:password is test:test or test1:test1
 -->
 
-*** NOTE *** If you are planning to setup persistent volumes via NFS (likely), it is suggested that you add a second hard drive to this machine with 100GB+ so that it can be served to OKD via NFS.
+*** NOTE *** If you are planning to setup persistent volumes via NFS (likely), it is suggested that you add a second hard drive to this machine with 100GB+ so that it can be served to OKD via NFS. Here are some quick and dirty instructions:
 
+1. Shutdown the LB
+1. Add an additional HDD with 100GB+
+1. Power on the LB
+1. Create the partition for /dev/sdb and format it: https://www.digitalocean.com/community/tutorials/create-a-partition-in-linux
+1. Mount the drive to a folder
+1. Enable the NFS server for the folder: https://dev.to/prajwalmithun/setup-nfs-server-client-in-linux-and-unix-27id
 
 ## Creating iPXE drivers for VMWare Fusion
 
-VMWare Fusion does not support iPXE out of the box apparently. To support iPXE, you need to specify an iPXE driver in the VMX file. This repo has a precompiled iPXE driver included but if you find yourself needing to build from scratch, I ran the following commands on the load balancer machine that was just created above.
+VMWare Fusion does not support iPXE out of the box apparently. To support iPXE, you need to specify an iPXE driver in the VMX file. This repo has a precompiled iPXE driver included but if you find yourself needing to build from scratch, running the following commands on the load balancer machine that was just created above will create them.
 
     sudo yum install -y git gcc gcc-c++ make zlib-devel binutils-devel xz-devel
     cd /tmp
@@ -250,11 +265,11 @@ Start a web server locally with `./webroot` as the root directory. The simplest
 way is to use the webserver built into python. This web server serves the ipxe
 configs and all the installation files. 🔥 the `./webroot/os_ignition/auth`
 directory contains files that dont need to be and should never be accessable, I
-have just been lazy here since it is a network local to wy workstation.
+have just been lazy here since it is a network local to my workstation.
 
     python -m http.server --bind 192.168.100.1 --directory ./webroot 8000
 
-*** IMPORTANT *** VMWare Fusion will sit in a PXE network boot loop until it's pulled out of it. After the machine has booted the iPXE but before you see the machine restart and begin looking to PXE boot again, go into the settings for the machine and click Startup Disk. Change the boot device to the Hard Disk.
+*** IMPORTANT *** VMWare Fusion will sit in a PXE network boot loop until it's pulled out of it. After the machine has entered iPXE boot but before you see the machine restart and begin looking to PXE boot again (after "Configuring (net0 <mac>)..."), go into the settings for the machine and click Startup Disk. Change the boot device to the Hard Disk.
 
 Start the *bootstrap* system. This should ipxe boot over http.
 
@@ -273,21 +288,19 @@ After a short while you should see the following in the weblogs.
     
 Change the Startup Disk to the Hard Disk
 
-Leave the machine at the login screen. Things are happening in the background which will pop up on the screen as they happen. This install bit takes a while.
-
-The *bootstrap* system is ready when it becomes available in the load-balancer
-You can examine if the required services are available by looking at the
-load-balancer stats page. Make sure that the *bootstrap* system is available in
-both the `kubernetes_api` and `machine_config` backends. They should go green.
-
-
-When it has finished installing you can ssh to the system using the ssh key
-created earlier.
+Leave the bootstrap VM at the login screen. Things are happening in the background which will pop up on the screen as they happen. This install bit takes a while.
+    
+If you'd like to view the progress:
 
     ssh -o StrictHostKeyChecking=no -i ssh_key/id_ed25519 core@192.168.100.5
 
     # to view the progress logs
     journalctl -b -f -u bootkube.service
+
+The *bootstrap* system is ready when it becomes available in the load-balancer and Vagrant has finished running successfully.
+You can examine if the required services are available by looking at the
+load-balancer stats page. Make sure that the *bootstrap* system is available under
+both the `kubernetes_api` and `machine_config` backend headers. They should go green.
 
 
 ## Control Plane systems and Worker systems
@@ -305,7 +318,7 @@ each.
 
 To run this a bit quicker in parallel, you could run these in multiple terminals/tabs or run them in the background like so:
 
-    vagrant up cp0 --provider vmware_fusion &
+    vagrant up cp0 --provider vmware_fusion & vagrant up cp1 --provider vmware_fusion & vagrant up cp2 --provider vmware_fusion &
 
 You need to remove the *bootstrap* system when it has finished doing the initial
 setup of the *cp* systems. The following command will monitor the
@@ -374,7 +387,10 @@ need signing.
 
 You can sign them one at a time but this does it all at once.
 
-    $ oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+```
+oc get csr -o go-template='{{range .items}}{{if not .status}}{{.metadata.name}}{{"\n"}}{{end}}{{end}}' | xargs oc adm certificate approve
+```
+    
     certificatesigningrequest.certificates.k8s.io/csr-8fztn approved
     certificatesigningrequest.certificates.k8s.io/csr-8hmrl approved
     certificatesigningrequest.certificates.k8s.io/csr-lkxhx approved
@@ -473,3 +489,5 @@ configs you set up at the beginning.
 
     cat webroot/os_ignition/auth/kubeadmin-password
 
+
+Tags: OKD4, OCP4, OpenShift4, OKD4.12, Docker Compose, Vagrant, Mac, OSX, install
