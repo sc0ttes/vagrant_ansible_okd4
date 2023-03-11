@@ -154,13 +154,17 @@ You can add a corporate CA certificate and proxy servers in the
         -----END CERTIFICATE-----
 
 Creating the Kubernetes manifest and Ignition config files:
-
-    openshift-install create manifests --dir=webroot/os_ignition
-
-    sed -i.bak 's/  mastersSchedulable: true/  mastersSchedulable: false/g' webroot/os_ignition/manifests/cluster-scheduler-02-config.yml
-
+```
+openshift-install create manifests --dir=webroot/os_ignition
+```
+If you don't want pods to run on your contorl plane master nodes, run the below command. This forces any newly created pods to run on only worker nodes.
+```
+sed -i.bak 's/  mastersSchedulable: true/  mastersSchedulable: false/g' webroot/os_ignition/manifests/cluster-scheduler-02-config.yml
+```
+And finally:
+```
     openshift-install create ignition-configs --dir=webroot/os_ignition --log-level=debug
-
+```
 
 Besides the ignition files this also create the kubernetes
 authentication files and they shouldn't be uploaded to a web servers.
