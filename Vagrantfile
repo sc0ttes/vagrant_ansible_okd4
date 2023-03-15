@@ -30,7 +30,7 @@ Vagrant.configure("2") do |config|
     v.linked_clone = false
     v.gui = true
     v.vmx["numvcpus"] = "8"
-    v.vmx["memsize"] = "24576"
+    v.vmx["memsize"] = "32768"
     v.vmx["virtualHW.version"] = "19"
     v.vmx["ethernet0.present"] = "TRUE"
     v.vmx["ethernet0.vnet"] = "vmnet7"
