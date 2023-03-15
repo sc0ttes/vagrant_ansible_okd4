@@ -233,11 +233,7 @@ You can access the *lb* system via vagrant:
     vagrant ssh lb
 
 
-<!--
-- https://traefik.192.168.100.2.xip.io:8443/dashboard/
-
-Username:password is test:test or test1:test1
--->
+*** NOTE *** If you plan on running pods on your master nodes and aren't deploying any worker nodes, you'll need to edit the /etc/haproxy/haproxy.cfg file accordingly. Add the master server lines to the `backend router_https` and `backend router_http` like so `server master-0 cp0.kube1.vm.test:443 check` with the correct server numbers and ports.
 
 *** NOTE *** If you are planning to setup persistent volumes via NFS (likely), it is suggested that you add a second hard drive to this machine with 100GB+ so that it can be served to OKD via NFS. Here are some quick and dirty instructions:
 
