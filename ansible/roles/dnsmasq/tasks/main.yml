@@ -1,5 +1,5 @@
 ---
-- name: Install dnsmasq and iptables
+- name: Install dnsmasq, iptables, and other helpful utilities
   yum:
     name: "{{ packages }}"
     state: present
@@ -9,6 +9,8 @@
       - dnsmasq
       - NetworkManager-glib
       - iptables-services
+      - vim
+      - tcpdump
 
 - name: Copy in dnsmasq config
   copy:
@@ -33,6 +35,10 @@
     daemon_reload: "yes"
     state: started
     enabled: "yes"
+
+- name: Flush all default iptables rules
+  iptables:
+    flush: yes
 
 - name: Create Iptables NAT chain
   iptables:
