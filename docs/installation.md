@@ -163,7 +163,7 @@ sed -i.bak 's/  mastersSchedulable: true/  mastersSchedulable: false/g' webroot/
 ```
 And finally:
 ```
-    openshift-install create ignition-configs --dir=webroot/os_ignition --log-level=debug
+openshift-install create ignition-configs --dir=webroot/os_ignition #--log-level=debug
 ```
 
 Besides the ignition files this also create the kubernetes
