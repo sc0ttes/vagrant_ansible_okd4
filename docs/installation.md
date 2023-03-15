@@ -180,8 +180,7 @@ this by hand or use the following command to grab the latest automatically:
     cd ../../
 
 
-Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded
-you downloaded.
+Update `webroot/boot.ipxe.cfg` to match the filename and versions you downloaded.
 
     set okd-kernel fedora-coreos-[VERSION]-live-kernel-x86_64
     set okd-initrd fedora-coreos-[VERSION]-live-initramfs.x86_64.img
