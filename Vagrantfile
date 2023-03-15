@@ -40,6 +40,8 @@ Vagrant.configure("2") do |config|
     v.vmx["e1000ebios.filename"] = File.dirname(__FILE__)+"/808610d3.mrom"
     v.vmx["tools.synctime"] = "TRUE"
     v.vmx["snapshot.disabled"] = "TRUE"
+    v.vmx["vhv.enable"] = "TRUE"
+    v.vmx["vvtd.enable"] = "TRUE"
   end
 
 
